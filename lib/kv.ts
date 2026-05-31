@@ -1,4 +1,24 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
+
+let redis: Redis | null = function getRedis() {
+  if (!redis) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    });
+  }
+  return redis;
+} as unknown as Redis;
+
+function getRedisClient(): Redis {
+  if (!redis) {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    });
+  }
+  return redis;
+}
 
 export interface Post {
   id: string;
@@ -24,7 +44,7 @@ export async function getPostsByCategory(category: string): Promise<Post[]> {
 }
 
 export async function getAllPosts(): Promise<Post[]> {
-  const posts = await kv.get<Post[]>(POSTS_KEY);
+  const posts = await getRedisClient().get<Post[]>(POSTS_KEY);
   return posts || [];
 }
 
@@ -35,14 +55,8 @@ export async function getRecentPosts(limit: number = 30): Promise<Post[]> {
     .slice(0, limit);
 }
 
-export async function savePosts(newPosts: Post[]): Promise<void> {
-  const existingPosts = await getAllPosts();
-  const updatedPosts = [...newPosts, ...existingPosts];
-  await kv.set(POSTS_KEY, updatedPosts);
-}
-
 export async function addPosts(newPosts: Post[]): Promise<void> {
   const existingPosts = await getAllPosts();
   const updatedPosts = [...newPosts, ...existingPosts];
-  await kv.set(POSTS_KEY, updatedPosts);
+  await getRedisClient().set(POSTS_KEY, updatedPosts);
 }

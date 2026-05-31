@@ -1,101 +1,34 @@
 import { downloadImage } from "./pixabay";
 
 const IMAGE_SIZE = 1080;
+const TITLE_MAX = 14;
+const CONTENT_MAX = 20;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let canvasModule: any = null;
-
-async function getCanvas() {
-  if (!canvasModule) {
-    canvasModule = await import("canvas");
-  }
-  return canvasModule;
+function escapeXml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-export async function generateTextImage(
-  imageUrl: string,
-  title: string,
-  content: string
-): Promise<Buffer> {
-  const imageBuffer = await downloadImage(imageUrl);
-
-  const { createCanvas, loadImage } = await getCanvas();
-  const image = await loadImage(Buffer.from(imageBuffer));
-
-  const canvas = createCanvas(IMAGE_SIZE, IMAGE_SIZE);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ctx = canvas.getContext("2d") as any;
-
-  const scale = Math.max(IMAGE_SIZE / image.width, IMAGE_SIZE / image.height);
-  const x = (IMAGE_SIZE - image.width * scale) / 2;
-  const y = (IMAGE_SIZE - image.height * scale) / 2;
-
-  ctx.drawImage(image, x, y, image.width * scale, image.height * scale);
-
-  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
-  ctx.fillRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
-
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-
-  const titleFontSize = 48;
-  ctx.font = `bold ${titleFontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
-
-  const maxWidth = IMAGE_SIZE - 120;
-  const titleLines = wrapText(ctx, title, maxWidth);
-  const lineHeight = titleFontSize * 1.4;
-  const titleHeight = titleLines.length * lineHeight;
-
-  const contentFontSize = 32;
-  ctx.font = `${contentFontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
-  const contentLines = wrapText(ctx, content, maxWidth);
-  const contentLineHeight = contentFontSize * 1.6;
-  const contentHeight = contentLines.length * contentLineHeight;
-
-  const totalHeight = titleHeight + 40 + contentHeight;
-  let startY = (IMAGE_SIZE - totalHeight) / 2;
-
-  ctx.font = `bold ${titleFontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
-  titleLines.forEach((line: string, i: number) => {
-    ctx.fillText(line, IMAGE_SIZE / 2, startY + titleFontSize + i * lineHeight);
-  });
-
-  startY += titleHeight + 40;
-
-  ctx.font = `${contentFontSize}px "PingFang SC", "Microsoft YaHei", sans-serif`;
-  ctx.globalAlpha = 0.9;
-  contentLines.forEach((line: string, i: number) => {
-    ctx.fillText(
-      line,
-      IMAGE_SIZE / 2,
-      startY + contentFontSize + i * contentLineHeight
-    );
-  });
-  ctx.globalAlpha = 1;
-
-  return canvas.toBuffer("image/jpeg", { quality: 0.95 });
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function wrapText(ctx: any, text: string, maxWidth: number): string[] {
+function wrapText(text: string, max: number): string[] {
   const lines: string[] = [];
-  let currentLine = "";
-
-  for (const char of text) {
-    const testLine = currentLine + char;
-    const metrics = ctx.measureText(testLine);
-
-    if (metrics.width > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = char;
-    } else {
-      currentLine = testLine;
-    }
+  let r = text;
+  while (r.length > 0) {
+    if (r.length <= max) { lines.push(r); break; }
+    lines.push(r.slice(0, max));
+    r = r.slice(max);
   }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
   return lines;
+}
+
+export async function generateTextImage(imageUrl: string, title: string, content: string): Promise<Buffer> {
+  const imgBuf = await downloadImage(imageUrl);
+  const b64 = Buffer.from(imgBuf).toString("base64");
+  const tLines = wrapText(title, TITLE_MAX);
+  const cLines = wrapText(content, CONTENT_MAX);
+  const tH = tLines.length * 67;
+  const cH = cLines.length * 45;
+  const startY = (IMAGE_SIZE - tH - 40 - cH) / 2;
+  const titleSvg = tLines.map((l, i) => `<text x="540" y="${startY + 48 + i * 67}" font-family="sans-serif" font-size="48" font-weight="bold" fill="#fff" text-anchor="middle">${escapeXml(l)}</text>`).join("\n  ");
+  const contentSvg = cLines.map((l, i) => `<text x="540" y="${startY + tH + 40 + 32 + i * 45}" font-family="sans-serif" font-size="32" fill="rgba(255,255,255,0.9)" text-anchor="middle">${escapeXml(l)}</text>`).join("\n  ");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}"><g clip-path="url(#c)"><image href="data:image/jpeg;base64,${b64}" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" preserveAspectRatio="xMidYMid slice"/></g><defs><clipPath id="c"><rect width="${IMAGE_SIZE}" height="${IMAGE_SIZE}"/></clipPath></defs><rect width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" fill="rgba(0,0,0,0.4)"/>${titleSvg}${contentSvg}</svg>`;
+  return Buffer.from(svg, "utf-8");
 }

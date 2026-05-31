@@ -1,40 +1,28 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+interface CategoryNavProps {
+  activeCategory: string;
+  onCategoryChange: (category: string) => void;
+}
 
-const categories = [
-  { name: "全部", slug: "" },
-  { name: "励志", slug: "励志" },
-  { name: "情感", slug: "情感" },
-  { name: "早安", slug: "早安" },
-  { name: "晚安", slug: "晚安" },
-];
+const categories = ["全部", "励志", "情感", "早安", "晚安", "日常"];
 
-export default function CategoryNav() {
-  const pathname = usePathname();
-
+export default function CategoryNav({ activeCategory, onCategoryChange }: CategoryNavProps) {
   return (
     <nav className="flex flex-wrap gap-2 justify-center">
-      {categories.map((category) => {
-        const isActive = category.slug
-          ? pathname === `/category/${category.slug}`
-          : pathname === "/";
-
-        return (
-          <Link
-            key={category.slug}
-            href={category.slug ? `/category/${category.slug}` : "/"}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              isActive
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {category.name}
-          </Link>
-        );
-      })}
+      {categories.map((cat) => (
+        <button
+          key={cat}
+          onClick={() => onCategoryChange(cat)}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            activeCategory === cat
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          {cat}
+        </button>
+      ))}
     </nav>
   );
 }
