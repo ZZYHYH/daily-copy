@@ -32,6 +32,13 @@ export interface Post {
 }
 
 const POSTS_KEY = "daily_posts";
+const KEEP_DAYS = 6; // 保留最近7天（含今天）
+
+function getCutoffDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - KEEP_DAYS);
+  return d.toISOString().split("T")[0];
+}
 
 export async function getPostsByDate(date: string): Promise<Post[]> {
   const allPosts = await getAllPosts();
@@ -57,6 +64,9 @@ export async function getRecentPosts(limit: number = 30): Promise<Post[]> {
 
 export async function addPosts(newPosts: Post[]): Promise<void> {
   const existingPosts = await getAllPosts();
-  const updatedPosts = [...newPosts, ...existingPosts];
+  const cutoff = getCutoffDate();
+  const keptPosts = existingPosts.filter((p) => p.date >= cutoff);
+  const updatedPosts = [...newPosts, ...keptPosts];
   await getRedisClient().set(POSTS_KEY, updatedPosts);
+  console.log(`KV: Added ${newPosts.length} posts, kept ${keptPosts.length}, removed ${existingPosts.length - keptPosts.length}. Total: ${updatedPosts.length}`);
 }

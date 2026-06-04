@@ -13,13 +13,13 @@ const PIXABAY_KEY = env.PIXABAY_API_KEY;
 
 const CATEGORIES = ["励志", "情感", "早安", "晚安", "日常"];
 const POSTS_PER_CATEGORY = 4;
-const KEEP_DAYS = 7;
+const KEEP_DAYS = 6; // 保留最近7天（含今天）
 const KEYWORDS = {
-  励志: ["journal writing", "morning coffee desk", "plant growing", "walking path nature", "book reading window"],
-  情感: ["couple walking sunset", "friends laughing cafe", "letter handwritten", "flower bouquet gift", "rainy day window"],
-  早安: ["bedside table morning", "breakfast toast coffee", "sunlight curtain", "alarm clock morning", "yoga mat morning"],
-  晚安: ["bedroom lamp night", "city view window night", "candle light evening", "tea cup evening", "starview rooftop"],
-  日常: ["home cooking kitchen", "train window scenery", "street food market", "bicycle city street", "laundry balcony sun"],
+  励志: ["jingdezhen ceramic workshop", "nanchang tengwang pavilion", "jinggangshan mountain path", "poyang lake bird", "ganzhou ancient wall"],
+  情感: ["wuyuan oil rape flower village", "sanqingshan sunrise", "longhushan taoist temple", "lushan waterfall", "jingdezhen porcelain"],
+  早安: ["bedside table morning", "sunrise window", "morning walk street", "tea cup morning", "plant window sill"],
+  晚安: ["bedroom lamp night", "city lights window", "candle evening", "book bed night", "moon window night"],
+  日常: ["morning coffee cup", "home cooking kitchen", "friends dinner table", "book cafe window", "plant balcony sun"],
 };
 
 async function generateCopy(category, index) {
@@ -28,7 +28,15 @@ async function generateCopy(category, index) {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${DEEPSEEK_KEY}` },
     body: JSON.stringify({
       model: "deepseek-chat",
-      messages: [{ role: "user", content: `你是一个朋友圈文案专家。请为"${category}"类别生成第${index + 1}条今日文案，要有独特角度，不要重复。输出JSON：{"title":"标题","content":"正文"}。文案要走心、有共鸣、适合发朋友圈，50-150字，不用emoji。` }],
+      messages: [{ role: "user", content: `你是一个朋友圈文案专家。请为"${category}"类别生成第${index + 1}条今日文案。
+
+文案要求：
+1. 纯生活感悟，不涉及任何职业身份
+2. 30-50字，简短精炼
+3. 像朋友在分享日常，真实自然
+4. 结尾多样化：可以是反问、感叹、金句、省略号、或者自然收尾，不要每条都用反问
+
+输出JSON格式：{"title":"标题","content":"正文"}` }],
       temperature: 0.8, max_tokens: 500,
     }),
   });
@@ -54,7 +62,7 @@ async function downloadImage(keyword, filename) {
   }
 }
 
-function getWeekAgoDate() {
+function getCutoffDate() {
   const d = new Date();
   d.setDate(d.getDate() - KEEP_DAYS);
   return d.toISOString().split("T")[0];
@@ -65,9 +73,9 @@ async function main() {
   const postsFile = join(process.cwd(), "public/data/posts.json");
   const existingPosts = existsSync(postsFile) ? JSON.parse(readFileSync(postsFile, "utf-8")) : [];
   
-  const cutoff = getWeekAgoDate();
+  const cutoff = getCutoffDate();
   const keptPosts = existingPosts.filter(p => p.date >= cutoff);
-  console.log(`Keeping ${keptPosts.length} posts from last ${KEEP_DAYS} days (removed ${existingPosts.length - keptPosts.length} old posts).`);
+  console.log(`保留最近7天的 ${keptPosts.length} 条内容（删除了 ${existingPosts.length - keptPosts.length} 条过期内容）`);
 
   const newPosts = [];
   let imgIndex = 0;

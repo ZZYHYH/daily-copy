@@ -55,7 +55,7 @@ export default function Home() {
       ) : filteredPosts.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500 text-lg">暂无内容</p>
-          <p className="text-gray-400 text-sm mt-2">内容将在每天凌晨自动生成</p>
+          <p className="text-gray-400 text-sm mt-2">内容将在每天23点自动更新</p>
         </div>
       ) : (
         <>
