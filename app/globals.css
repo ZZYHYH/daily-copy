@@ -13,7 +13,8 @@
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 30%, #fdf2f8 60%, #fefce8 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
 }
@@ -30,4 +31,37 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.masonry {
+  columns: 1;
+  column-gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .masonry { columns: 2; }
+}
+
+@media (min-width: 1024px) {
+  .masonry { columns: 3; }
+}
+
+.masonry > * {
+  break-inside: avoid;
+  margin-bottom: 1rem;
 }

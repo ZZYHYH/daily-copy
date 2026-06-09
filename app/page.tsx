@@ -49,11 +49,13 @@ export default function Home() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="flex flex-col justify-center items-center py-20 gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-3 border-orange-300 border-t-orange-500" />
+          <p className="text-gray-400 text-sm">正在加载...</p>
         </div>
       ) : filteredPosts.length === 0 ? (
-        <div className="text-center py-20">
+        <div className="text-center py-20 glass-card rounded-3xl mx-4">
+          <p className="text-4xl mb-3">📭</p>
           <p className="text-gray-500 text-lg">暂无内容</p>
           <p className="text-gray-400 text-sm mt-2">内容将在每天23点自动更新</p>
         </div>
@@ -61,23 +63,32 @@ export default function Home() {
         <>
           {todayPosts.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <h2 className="text-lg font-bold text-gray-700 mb-5 flex items-center gap-2 px-1">
+                <span className="w-2.5 h-2.5 bg-gradient-to-r from-red-400 to-pink-500 rounded-full animate-pulse" />
                 今日推荐
+                <span className="text-xs text-gray-400 font-normal ml-auto">{todayPosts.length} 条</span>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {todayPosts.map((post) => (
-                  <PostCard key={post.id} {...post} />
+              <div className="masonry">
+                {todayPosts.map((post, i) => (
+                  <div key={post.id} style={{ animationDelay: `${i * 0.1}s` }}>
+                    <PostCard {...post} />
+                  </div>
                 ))}
               </div>
             </section>
           )}
           {olderPosts.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">历史内容</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {olderPosts.map((post) => (
-                  <PostCard key={post.id} {...post} />
+              <h2 className="text-lg font-bold text-gray-700 mb-5 flex items-center gap-2 px-1">
+                <span className="w-2.5 h-2.5 bg-gradient-to-r from-gray-300 to-gray-400 rounded-full" />
+                历史内容
+                <span className="text-xs text-gray-400 font-normal ml-auto">{olderPosts.length} 条</span>
+              </h2>
+              <div className="masonry">
+                {olderPosts.map((post, i) => (
+                  <div key={post.id} style={{ animationDelay: `${i * 0.05}s` }}>
+                    <PostCard {...post} />
+                  </div>
                 ))}
               </div>
             </section>
