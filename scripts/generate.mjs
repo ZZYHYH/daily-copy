@@ -186,7 +186,7 @@ async function generateCopy(category, index) {
   return match ? JSON.parse(match[0]) : { title: category + "文案", content: text };
 }
 
-async function downloadImage(keyword, filename) {
+async function downloadImage(keyword, filename, usedImageUrls = []) {
   try {
     // 优化参数：更高质量、更相关的图片
     const params = new URLSearchParams({
@@ -205,11 +205,13 @@ async function downloadImage(keyword, filename) {
     const res = await fetch(`https://pixabay.com/api/?${params}`);
     const data = await res.json();
     
-    if (!data.hits || data.hits.length === 0) {
-      // 如果没有结果，尝试更通用的关键词
+    let hits = data.hits || [];
+    
+    // 如果没有结果，尝试更通用的关键词
+    if (hits.length === 0) {
       const fallbackParams = new URLSearchParams({
         key: PIXABAY_KEY,
-        q: keyword.split(" ").slice(0, 2).join(" "),  // 只用前两个词
+        q: keyword.split(" ").slice(0, 2).join(" "),
         image_type: "photo",
         orientation: "horizontal",
         per_page: "10",
@@ -221,18 +223,19 @@ async function downloadImage(keyword, filename) {
       
       const fallbackRes = await fetch(`https://pixabay.com/api/?${fallbackParams}`);
       const fallbackData = await fallbackRes.json();
-      
-      if (!fallbackData.hits || fallbackData.hits.length === 0) return "";
-      
-      const img = fallbackData.hits[Math.floor(Math.random() * Math.min(5, fallbackData.hits.length))];
-      const imgRes = await fetch(img.largeImageURL);
-      const buffer = Buffer.from(await imgRes.arrayBuffer());
-      writeFileSync(join(process.cwd(), "public/images", filename), buffer);
-      return `/images/${filename}`;
+      hits = fallbackData.hits || [];
     }
     
+    if (hits.length === 0) return "";
+    
+    // 过滤掉已使用的图片URL
+    const availableHits = hits.filter(h => !usedImageUrls.includes(h.largeImageURL));
+    
+    // 如果所有图片都已使用，从原始列表中随机选择
+    const finalHits = availableHits.length > 0 ? availableHits : hits;
+    
     // 从前5张中随机选择，确保质量
-    const img = data.hits[Math.floor(Math.random() * Math.min(5, data.hits.length))];
+    const img = finalHits[Math.floor(Math.random() * Math.min(5, finalHits.length))];
     const imgRes = await fetch(img.largeImageURL);
     const buffer = Buffer.from(await imgRes.arrayBuffer());
     writeFileSync(join(process.cwd(), "public/images", filename), buffer);
@@ -258,17 +261,69 @@ async function main() {
   const keptPosts = existingPosts.filter(p => p.date >= cutoff);
   console.log(`保留最近7天的 ${keptPosts.length} 条内容（删除了 ${existingPosts.length - keptPosts.length} 条过期内容）`);
 
+  // 收集已使用的标题和图片URL（包括保留的历史内容）
+  const usedTitles = new Set(keptPosts.map(p => p.title));
+  const usedContents = new Set(keptPosts.map(p => p.content));
+  const usedImageUrls = keptPosts.map(p => p.image_url).filter(Boolean);
+  
+  console.log(`已存在 ${usedTitles.size} 个标题，${usedImageUrls.length} 张图片`);
+
   const newPosts = [];
   let imgIndex = 0;
 
   for (const cat of CATEGORIES) {
+    const keywords = KEYWORDS[cat];
+    let keywordIndex = 0;
+    
     for (let i = 0; i < POSTS_PER_CATEGORY; i++) {
       console.log(`Generating ${cat} #${i + 1}...`);
-      const copy = await generateCopy(cat, i);
-      const keywords = KEYWORDS[cat];
-      const keyword = keywords[i % keywords.length];
+      
+      // 尝试生成不重复的文案（最多重试3次）
+      let copy = null;
+      let attempts = 0;
+      const MAX_ATTEMPTS = 3;
+      
+      while (attempts < MAX_ATTEMPTS) {
+        copy = await generateCopy(cat, i);
+        attempts++;
+        
+        // 检查标题是否重复
+        if (!usedTitles.has(copy.title)) {
+          break;
+        }
+        
+        // 如果标题重复，检查内容是否也重复
+        if (!usedContents.has(copy.content)) {
+          // 内容不同，可以接受（标题相似但内容不同）
+          break;
+        }
+        
+        console.log(`  标题和内容重复，重试第 ${attempts} 次...`);
+        copy = null;
+      }
+      
+      // 如果3次都重复，强制使用（添加日期后缀避免完全重复）
+      if (!copy) {
+        copy = await generateCopy(cat, i);
+        copy.title = `${copy.title}（${today.slice(5)}）`;
+        console.log(`  使用带日期后缀的标题: ${copy.title}`);
+      }
+      
+      // 记录已使用的标题和内容
+      usedTitles.add(copy.title);
+      usedContents.add(copy.content);
+      
+      // 选择不重复的关键词
+      let keyword = keywords[keywordIndex % keywords.length];
+      keywordIndex++;
+      
       const filename = `${today}-${imgIndex++}.jpg`;
-      const imageUrl = await downloadImage(keyword, filename);
+      const imageUrl = await downloadImage(keyword, filename, usedImageUrls);
+      
+      if (imageUrl) {
+        usedImageUrls.push(imageUrl);
+      }
+      
       newPosts.push({
         id: crypto.randomUUID(), date: today, category: cat,
         title: copy.title, content: copy.content,
