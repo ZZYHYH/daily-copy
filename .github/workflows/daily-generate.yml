@@ -36,11 +36,4 @@ jobs:
           git diff --staged --quiet || git commit -m "Auto-generate daily content $(date +\%Y-\%m-\%d)"
           git push
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./
+      # Vercel 通过 GitHub 集成自动部署，无需手动触发
