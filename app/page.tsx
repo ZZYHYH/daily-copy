@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PostCard from "@/components/PostCard";
 import CategoryNav from "@/components/CategoryNav";
+import SearchBar from "@/components/SearchBar";
 
 interface Post {
   id: string;
@@ -18,6 +19,8 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState("全部");
+  const [searchResults, setSearchResults] = useState<Post[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -37,13 +40,21 @@ export default function Home() {
     }
   };
 
+  const handleSearchResults = useCallback((results: Post[]) => {
+    setSearchResults(results);
+    setIsSearching(results.length !== posts.length);
+  }, [posts.length]);
+
   const today = new Date().toISOString().split("T")[0];
-  const filteredPosts = category === "全部" ? posts : posts.filter((p) => p.category === category);
+  const displayPosts = isSearching ? searchResults : posts;
+  const filteredPosts = category === "全部" ? displayPosts : displayPosts.filter((p) => p.category === category);
   const todayPosts = filteredPosts.filter((p) => p.date === today);
   const olderPosts = filteredPosts.filter((p) => p.date !== today);
 
   return (
     <div className="space-y-8">
+      <SearchBar posts={posts} onSearchResults={handleSearchResults} />
+      
       <div className="text-center">
         <CategoryNav activeCategory={category} onCategoryChange={setCategory} />
       </div>
@@ -56,8 +67,10 @@ export default function Home() {
       ) : filteredPosts.length === 0 ? (
         <div className="text-center py-20 glass-card rounded-3xl mx-4">
           <p className="text-4xl mb-3">📭</p>
-          <p className="text-gray-500 text-lg">暂无内容</p>
-          <p className="text-gray-400 text-sm mt-2">内容将在每天23点自动更新</p>
+          <p className="text-gray-500 text-lg">{isSearching ? "没有找到相关内容" : "暂无内容"}</p>
+          <p className="text-gray-400 text-sm mt-2">
+            {isSearching ? "试试其他关键词" : "内容将在每天23点自动更新"}
+          </p>
         </div>
       ) : (
         <>

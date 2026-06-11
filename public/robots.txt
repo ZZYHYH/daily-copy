@@ -1,0 +1,7 @@
+# https://daily-copy.vercel.app/robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /data/
+
+Sitemap: https://daily-copy.vercel.app/sitemap.xml

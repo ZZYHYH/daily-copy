@@ -31,11 +31,11 @@ const CATEGORIES = ["励志", "情感", "早安", "晚安", "日常"];
 const POSTS_PER_CATEGORY = 4;
 const KEEP_DAYS = 6; // 保留最近7天（含今天）
 const KEYWORDS = {
-  励志: ["jingdezhen ceramic workshop", "nanchang tengwang pavilion", "jinggangshan mountain path", "poyang lake bird", "ganzhou ancient wall"],
-  情感: ["wuyuan oil rape flower village", "sanqingshan sunrise", "longhushan taoist temple", "lushan waterfall", "jingdezhen porcelain"],
-  早安: ["bedside table morning", "sunrise window", "morning walk street", "tea cup morning", "plant window sill"],
-  晚安: ["bedroom lamp night", "city lights window", "candle evening", "book bed night", "moon window night"],
-  日常: ["morning coffee cup", "home cooking kitchen", "friends dinner table", "book cafe window", "plant balcony sun"],
+  励志: ["mountain sunrise", "ocean waves", "forest path", "city skyline", "running athlete", "sunrise over sea", "climbing mountain", "starlit sky"],
+  情感: ["couple walking", "sunset beach", "flower garden", "rainy window", "candle light", "old book", "vintage letter", "warm coffee"],
+  早安: ["morning coffee", "sunrise window", "breakfast table", "garden morning", "yoga mat", "fresh juice", "morning walk", "bird singing"],
+  晚安: ["night sky", "moon reflection", "cozy bedroom", "candle night", "starry sky", "city lights", "pajamas tea", "bed lamp"],
+  日常: ["cooking kitchen", "reading book", "park bench", "bicycle ride", "market shopping", "home garden", "coffee shop", "weekend picnic"],
 };
 
 async function generateCopy(category, index) {
@@ -51,9 +51,13 @@ async function generateCopy(category, index) {
 2. 30-50字，简短精炼
 3. 像朋友在分享日常，真实自然
 4. 结尾多样化：可以是反问、感叹、金句、省略号、或者自然收尾，不要每条都用反问
+5. 避免使用"小确幸"、"治愈"、"人间值得"等过度使用的网络热词
+6. 可以适当加入emoji表情，但不要过多
+7. 文案风格：温暖、真实、有生活气息
 
 输出JSON格式：{"title":"标题","content":"正文"}` }],
-      temperature: 0.8, max_tokens: 500,
+      temperature: 0.9,
+      max_tokens: 500,
     }),
   });
   const data = await res.json();

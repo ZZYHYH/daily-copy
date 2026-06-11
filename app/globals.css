@@ -3,6 +3,27 @@
 :root {
   --background: #f9fafb;
   --foreground: #171717;
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(255, 255, 255, 0.2);
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827;
+    --foreground: #f9fafb;
+    --card-bg: rgba(31, 41, 55, 0.8);
+    --card-border: rgba(75, 85, 99, 0.3);
+    --text-primary: #f3f4f6;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    --accent: #fb923c;
+    --accent-hover: #f97316;
+  }
 }
 
 @theme inline {
@@ -17,6 +38,14 @@ body {
   background-attachment: fixed;
   color: var(--foreground);
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 30%, #1e1b4b 60%, #1e293b 100%);
+  }
 }
 
 .line-clamp-2 {
@@ -43,9 +72,16 @@ body {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .masonry {
@@ -53,7 +89,7 @@ body {
   column-gap: 1rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .masonry { columns: 2; }
 }
 
@@ -64,4 +100,52 @@ body {
 .masonry > * {
   break-inside: avoid;
   margin-bottom: 1rem;
+}
+
+/* 移动端优化 */
+@media (max-width: 640px) {
+  .masonry {
+    column-gap: 0.75rem;
+  }
+  
+  .masonry > * {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* 触摸设备优化 */
+@media (hover: none) {
+  .glass-card:hover {
+    transform: none;
+  }
+}
+
+/* 减少动画（用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up {
+    animation: none;
+  }
+  
+  .animate-pulse {
+    animation: none;
+  }
 }
