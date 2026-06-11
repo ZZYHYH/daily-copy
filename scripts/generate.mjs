@@ -186,14 +186,14 @@ async function generateCopy(category, index) {
   return match ? JSON.parse(match[0]) : { title: category + "文案", content: text };
 }
 
-async function downloadImage(keyword, filename, usedImageIds = []) {
+async function downloadImage(keyword, filename) {
   try {
     const params = new URLSearchParams({
       key: PIXABAY_KEY,
       q: keyword,
       image_type: "photo",
       orientation: "horizontal",
-      per_page: "20",
+      per_page: "30",
       safesearch: "true",
       min_width: "1200",
       min_height: "800",
@@ -211,7 +211,7 @@ async function downloadImage(keyword, filename, usedImageIds = []) {
         q: keyword.split(" ").slice(0, 2).join(" "),
         image_type: "photo",
         orientation: "horizontal",
-        per_page: "15",
+        per_page: "20",
         safesearch: "true",
         min_width: "800",
         min_height: "600",
@@ -225,20 +225,9 @@ async function downloadImage(keyword, filename, usedImageIds = []) {
     
     if (hits.length === 0) return "";
     
-    // 使用Pixabay图片ID去重
-    const availableHits = hits.filter(h => !usedImageIds.includes(h.id));
-    
-    let selectedImg;
-    if (availableHits.length === 0) {
-      // 如果所有图片都已使用，随机选一张
-      selectedImg = hits[Math.floor(Math.random() * hits.length)];
-    } else {
-      // 从可用图片中随机选择
-      selectedImg = availableHits[Math.floor(Math.random() * Math.min(5, availableHits.length))];
-    }
-    
-    // 记录已使用的图片ID
-    usedImageIds.push(selectedImg.id);
+    // 从结果中随机选择一张（使用更大的随机范围）
+    const randomIndex = Math.floor(Math.random() * Math.min(15, hits.length));
+    const selectedImg = hits[randomIndex];
     
     const imgRes = await fetch(selectedImg.largeImageURL);
     const buffer = Buffer.from(await imgRes.arrayBuffer());
@@ -265,12 +254,20 @@ async function main() {
   const keptPosts = existingPosts.filter(p => p.date >= cutoff);
   console.log(`保留最近7天的 ${keptPosts.length} 条内容（删除了 ${existingPosts.length - keptPosts.length} 条过期内容）`);
 
-  // 收集所有已使用的标题、内容和图片ID（包括今天已生成的）
+  // 收集所有已使用的标题和内容
   const usedTitles = new Set(keptPosts.map(p => p.title));
   const usedContents = new Set(keptPosts.map(p => p.content));
-  const usedImageIds = [];  // 存储Pixabay图片ID
   
   console.log(`已存在 ${usedTitles.size} 个标题`);
+
+  // 限制每天最多生成20条新内容
+  const todayPosts = keptPosts.filter(p => p.date === today);
+  const MAX_POSTS_PER_DAY = 20;
+  
+  if (todayPosts.length >= MAX_POSTS_PER_DAY) {
+    console.log(`今天已有 ${todayPosts.length} 条内容，跳过生成`);
+    return;
+  }
 
   const newPosts = [];
   let imgIndex = 0;
@@ -317,9 +314,7 @@ async function main() {
       keywordIndex++;
       
       const filename = `${today}-${imgIndex++}.jpg`;
-      const imageUrl = await downloadImage(keyword, filename, usedImageIds);
-      
-      // 不需要在这里添加image ID，因为downloadImage内部已经处理了
+      const imageUrl = await downloadImage(keyword, filename);
       
       newPosts.push({
         id: crypto.randomUUID(), date: today, category: cat,
