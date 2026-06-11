@@ -7,6 +7,9 @@ interface Post {
   title: string;
   content: string;
   category: string;
+  date: string;
+  image_url: string;
+  image_author: string;
 }
 
 interface SearchBarProps {
