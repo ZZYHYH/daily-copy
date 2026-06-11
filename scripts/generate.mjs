@@ -30,12 +30,60 @@ const PIXABAY_KEY = env.PIXABAY_API_KEY;
 const CATEGORIES = ["励志", "情感", "早安", "晚安", "日常"];
 const POSTS_PER_CATEGORY = 4;
 const KEEP_DAYS = 6; // 保留最近7天（含今天）
+
+// 优化后的关键词：更中国化、更日常生活、风格更统一
+// 每个类别使用相似的视觉风格，确保整体协调
 const KEYWORDS = {
-  励志: ["mountain sunrise", "ocean waves", "forest path", "city skyline", "running athlete", "sunrise over sea", "climbing mountain", "starlit sky"],
-  情感: ["couple walking", "sunset beach", "flower garden", "rainy window", "candle light", "old book", "vintage letter", "warm coffee"],
-  早安: ["morning coffee", "sunrise window", "breakfast table", "garden morning", "yoga mat", "fresh juice", "morning walk", "bird singing"],
-  晚安: ["night sky", "moon reflection", "cozy bedroom", "candle night", "starry sky", "city lights", "pajamas tea", "bed lamp"],
-  日常: ["cooking kitchen", "reading book", "park bench", "bicycle ride", "market shopping", "home garden", "coffee shop", "weekend picnic"],
+  励志: [
+    "chinese city sunrise rooftop",    // 城市日出
+    "chinese mountain fog morning",    // 山间晨雾
+    "chinese park morning exercise",   // 晨练
+    "chinese tea cup sunrise",         // 茶与日出
+    "chinese bamboo forest light",     // 竹林光影
+    "chinese lake reflection",         // 湖面倒影
+    "chinese garden morning dew",      // 庭院露珠
+    "chinese street morning run",      // 晨跑
+  ],
+  情感: [
+    "chinese couple tea together",     // 一起喝茶
+    "chinese old couple walking",      // 老人散步
+    "chinese family dinner table",     // 家庭聚餐
+    "chinese friends coffee chat",     // 朋友聊天
+    "chinese rain window cup",         // 雨天窗边
+    "chinese sunset balcony",          // 阳台夕阳
+    "chinese letter handwritten",      // 手写信
+    "chinese flower vase window",      // 窗台花瓶
+  ],
+  早安: [
+    "chinese morning tea cup",         // 早茶
+    "chinese breakfast noodles",       // 早餐面条
+    "chinese morning window light",    // 晨光窗户
+    "chinese plant morning dew",       // 植物晨露
+    "chinese morning market",          // 早市
+    "chinese morning park walk",       // 公园晨走
+    "chinese morning coffee shop",     // 咖啡馆
+    "chinese morning bread milk",      // 面包牛奶
+  ],
+  晚安: [
+    "chinese night city lights",       // 城市夜景
+    "chinese night tea cup lamp",      // 夜茶台灯
+    "chinese night window moon",       // 窗外月亮
+    "chinese night book lamp",         // 夜读台灯
+    "chinese night street rain",       // 雨夜街道
+    "chinese night balcony stars",     // 阳台星空
+    "chinese night candle bath",       // 蜡烛泡澡
+    "chinese night bedroom cozy",      // 温馨卧室
+  ],
+  日常: [
+    "chinese cooking home kitchen",    // 家庭做饭
+    "chinese reading book cafe",       // 咖啡馆读书
+    "chinese market shopping bag",     // 买菜
+    "chinese park bench sunny",        // 公园长椅
+    "chinese home cleaning tidy",      // 收拾家务
+    "chinese plant watering home",     // 浇花
+    "chinese laundry window sun",      // 晾衣服
+    "chinese cooking dumpling",        // 包饺子
+  ],
 };
 
 async function generateCopy(category, index) {
@@ -68,10 +116,51 @@ async function generateCopy(category, index) {
 
 async function downloadImage(keyword, filename) {
   try {
-    const res = await fetch(`https://pixabay.com/api/?key=${PIXABAY_KEY}&q=${keyword}&image_type=photo&orientation=horizontal&per_page=10&safesearch=true`);
+    // 优化参数：更高质量、更相关的图片
+    const params = new URLSearchParams({
+      key: PIXABAY_KEY,
+      q: keyword,
+      image_type: "photo",
+      orientation: "horizontal",
+      per_page: "15",           // 更多选择
+      safesearch: "true",
+      min_width: "1200",        // 最小宽度保证质量
+      min_height: "800",        // 最小高度保证质量
+      editors_choice: "true",   // 编辑精选，质量更高
+      order: "popular",         // 按热门排序，更优质
+    });
+    
+    const res = await fetch(`https://pixabay.com/api/?${params}`);
     const data = await res.json();
-    if (!data.hits || data.hits.length === 0) return "";
-    const img = data.hits[Math.floor(Math.random() * data.hits.length)];
+    
+    if (!data.hits || data.hits.length === 0) {
+      // 如果没有结果，尝试更通用的关键词
+      const fallbackParams = new URLSearchParams({
+        key: PIXABAY_KEY,
+        q: keyword.split(" ").slice(0, 2).join(" "),  // 只用前两个词
+        image_type: "photo",
+        orientation: "horizontal",
+        per_page: "10",
+        safesearch: "true",
+        min_width: "800",
+        min_height: "600",
+        order: "popular",
+      });
+      
+      const fallbackRes = await fetch(`https://pixabay.com/api/?${fallbackParams}`);
+      const fallbackData = await fallbackRes.json();
+      
+      if (!fallbackData.hits || fallbackData.hits.length === 0) return "";
+      
+      const img = fallbackData.hits[Math.floor(Math.random() * Math.min(5, fallbackData.hits.length))];
+      const imgRes = await fetch(img.largeImageURL);
+      const buffer = Buffer.from(await imgRes.arrayBuffer());
+      writeFileSync(join(process.cwd(), "public/images", filename), buffer);
+      return `/images/${filename}`;
+    }
+    
+    // 从前5张中随机选择，确保质量
+    const img = data.hits[Math.floor(Math.random() * Math.min(5, data.hits.length))];
     const imgRes = await fetch(img.largeImageURL);
     const buffer = Buffer.from(await imgRes.arrayBuffer());
     writeFileSync(join(process.cwd(), "public/images", filename), buffer);
