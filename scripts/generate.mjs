@@ -31,79 +31,151 @@ const CATEGORIES = ["励志", "情感", "早安", "晚安", "日常"];
 const POSTS_PER_CATEGORY = 4;
 const KEEP_DAYS = 6; // 保留最近7天（含今天）
 
-// 优化后的关键词：更中国化、更日常生活、风格更统一
-// 每个类别使用相似的视觉风格，确保整体协调
+// 城市生活可拍摄场景：每个人日常都能拍到的东西
 const KEYWORDS = {
   励志: [
-    "chinese city sunrise rooftop",    // 城市日出
-    "chinese mountain fog morning",    // 山间晨雾
-    "chinese park morning exercise",   // 晨练
-    "chinese tea cup sunrise",         // 茶与日出
-    "chinese bamboo forest light",     // 竹林光影
-    "chinese lake reflection",         // 湖面倒影
-    "chinese garden morning dew",      // 庭院露珠
-    "chinese street morning run",      // 晨跑
+    "city sunrise window view",          // 窗外日出
+    "morning coffee desk work",          // 桌上咖啡
+    "city street morning walk",          // 清晨街道
+    "sunrise balcony plant",             // 阳台植物日出
+    "morning gym workout",               // 晨练健身
+    "city skyline rooftop",              // 天台看城市
+    "morning subway commute",            // 早高峰地铁
+    "sunrise window curtain",            // 窗帘透光
   ],
   情感: [
-    "chinese couple tea together",     // 一起喝茶
-    "chinese old couple walking",      // 老人散步
-    "chinese family dinner table",     // 家庭聚餐
-    "chinese friends coffee chat",     // 朋友聊天
-    "chinese rain window cup",         // 雨天窗边
-    "chinese sunset balcony",          // 阳台夕阳
-    "chinese letter handwritten",      // 手写信
-    "chinese flower vase window",      // 窗台花瓶
+    "couple walking city street",        // 情侣散步
+    "friends dinner table",              // 朋友聚餐
+    "rain window cup tea",               // 雨天窗边喝茶
+    "sunset balcony plants",             // 阳台看夕阳
+    "handwritten note desk",             // 手写便签
+    "cat sleeping sofa",                 // 猫咪沙发
+    "couple cooking kitchen",            // 一起做饭
+    "family video call phone",           // 视频通话
   ],
   早安: [
-    "chinese morning tea cup",         // 早茶
-    "chinese breakfast noodles",       // 早餐面条
-    "chinese morning window light",    // 晨光窗户
-    "chinese plant morning dew",       // 植物晨露
-    "chinese morning market",          // 早市
-    "chinese morning park walk",       // 公园晨走
-    "chinese morning coffee shop",     // 咖啡馆
-    "chinese morning bread milk",      // 面包牛奶
+    "morning coffee cup table",          // 早安咖啡
+    "breakfast toast egg",               // 吐司鸡蛋
+    "morning sunlight window",           // 晨光窗户
+    "morning plant watering",            // 浇花
+    "morning bread milk",                // 面包牛奶
+    "morning fruit plate",               // 水果早餐
+    "morning window view city",          // 窗外晨景
+    "morning tea cup steam",             // 热茶蒸汽
   ],
   晚安: [
-    "chinese night city lights",       // 城市夜景
-    "chinese night tea cup lamp",      // 夜茶台灯
-    "chinese night window moon",       // 窗外月亮
-    "chinese night book lamp",         // 夜读台灯
-    "chinese night street rain",       // 雨夜街道
-    "chinese night balcony stars",     // 阳台星空
-    "chinese night candle bath",       // 蜡烛泡澡
-    "chinese night bedroom cozy",      // 温馨卧室
+    "night city lights window",          // 窗外夜景
+    "bedside lamp book",                 // 床头灯书
+    "night tea cup warm",                // 夜晚热茶
+    "night window moon",                 // 窗外月亮
+    "night candle cozy room",            // 蜡烛温馨
+    "night phone screen dark",           // 手机夜晚
+    "night balcony stars",               // 阳台星空
+    "night blanket cozy",                // 被窝温馨
   ],
   日常: [
-    "chinese cooking home kitchen",    // 家庭做饭
-    "chinese reading book cafe",       // 咖啡馆读书
-    "chinese market shopping bag",     // 买菜
-    "chinese park bench sunny",        // 公园长椅
-    "chinese home cleaning tidy",      // 收拾家务
-    "chinese plant watering home",     // 浇花
-    "chinese laundry window sun",      // 晾衣服
-    "chinese cooking dumpling",        // 包饺子
+    "cooking home kitchen",              // 家庭做饭
+    "reading book sofa",                 // 沙发读书
+    "shopping bag market",               // 买菜购物
+    "park bench sunny day",              // 公园长椅
+    "home cleaning organizing",          // 收拾家务
+    "plant watering balcony",            // 阳台浇花
+    "laundry drying window",             // 窗边晾衣
+    "making dumplings home",             // 包饺子
   ],
 };
 
+// 每个类别有独立的文案风格指引
+const PROMPTS = {
+  励志: `你是一个朋友圈文案专家。请生成一条"励志"类别的文案。
+
+风格要求：
+- 主题：奋斗、坚持、成长、努力、不放弃
+- 语气：积极向上，给人力量，但不要鸡汤
+- 场景：上班族的日常感悟，早起、加班、学习、运动
+- 避免：不要说教，不要用"加油"、"奥利给"等口号
+- 示例风格："早起的地铁虽然挤，但至少方向是对的。"
+
+文案要求：
+1. 30-50字，简短精炼
+2. 纯生活感悟，不涉及任何职业身份
+3. 像朋友在分享日常，真实自然
+
+输出JSON格式：{"title":"标题","content":"正文"}`,
+
+  情感: `你是一个朋友圈文案专家。请生成一条"情感"类别的文案。
+
+风格要求：
+- 主题：亲情、友情、爱情、思念、陪伴
+- 语气：温暖细腻，有共鸣感
+- 场景：和朋友吃饭、和家人视频、想念某个人、雨天独处
+- 避免：不要矫情，不要过度煽情，不要用"泪目"、"破防"
+- 示例风格："下雨天，突然想给好久没联系的朋友发条消息。"
+
+文案要求：
+1. 30-50字，简短精炼
+2. 纯生活感悟，不涉及任何职业身份
+3. 像朋友在分享日常，真实自然
+
+输出JSON格式：{"title":"标题","content":"正文"}`,
+
+  早安: `你是一个朋友圈文案专家。请生成一条"早安"类别的文案。
+
+风格要求：
+- 主题：新的一天、清晨的美好、早餐、出门
+- 语气：轻松愉悦，有活力
+- 场景：起床、吃早餐、出门上班、晨练、喝咖啡
+- 避免：不要用"元气满满"、"又是美好的一天"等套话
+- 示例风格："今天的早餐是吐司加煎蛋，简单但满足。"
+
+文案要求：
+1. 30-50字，简短精炼
+2. 纯生活感悟，不涉及任何职业身份
+3. 像朋友在分享日常，真实自然
+
+输出JSON格式：{"title":"标题","content":"正文"}`,
+
+  晚安: `你是一个朋友圈文案专家。请生成一条"晚安"类别的文案。
+
+风格要求：
+- 主题：一天结束、放松、安静、夜晚的思绪
+- 语气：平静温柔，有沉淀感
+- 场景：洗完澡、躺在床上、关灯前、看窗外夜景
+- 避免：不要用"晚安好梦"、"明天会更好"等套话
+- 示例风格："洗完澡躺在床上，今天就到这里吧。"
+
+文案要求：
+1. 30-50字，简短精炼
+2. 纯生活感悟，不涉及任何职业身份
+3. 像朋友在分享日常，真实自然
+
+输出JSON格式：{"title":"标题","content":"正文"}`,
+
+  日常: `你是一个朋友圈文案专家。请生成一条"日常"类别的文案。
+
+风格要求：
+- 主题：做饭、打扫、逛街、发呆、生活琐事
+- 语气：真实接地气，像在和朋友聊天
+- 场景：做饭、买菜、收拾房间、阳台发呆、遛弯
+- 避免：不要文艺腔，不要用"岁月静好"、"现世安稳"
+- 示例风格："今天自己做了碗面，味道居然还不错。"
+
+文案要求：
+1. 30-50字，简短精炼
+2. 纯生活感悟，不涉及任何职业身份
+3. 像朋友在分享日常，真实自然
+
+输出JSON格式：{"title":"标题","content":"正文"}`,
+};
+
 async function generateCopy(category, index) {
+  const prompt = PROMPTS[category] || PROMPTS["日常"];
   const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${DEEPSEEK_KEY}` },
     body: JSON.stringify({
       model: "deepseek-chat",
-      messages: [{ role: "user", content: `你是一个朋友圈文案专家。请为"${category}"类别生成第${index + 1}条今日文案。
-
-文案要求：
-1. 纯生活感悟，不涉及任何职业身份
-2. 30-50字，简短精炼
-3. 像朋友在分享日常，真实自然
-4. 结尾多样化：可以是反问、感叹、金句、省略号、或者自然收尾，不要每条都用反问
-5. 避免使用"小确幸"、"治愈"、"人间值得"等过度使用的网络热词
-6. 可以适当加入emoji表情，但不要过多
-7. 文案风格：温暖、真实、有生活气息
-
-输出JSON格式：{"title":"标题","content":"正文"}` }],
+      messages: [{ role: "user", content: prompt }],
       temperature: 0.9,
       max_tokens: 500,
     }),
