@@ -8,6 +8,8 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,6 +18,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Create images directory
+        run: mkdir -p public/images
 
       - name: Generate Content
         env:
@@ -31,10 +36,11 @@ jobs:
           git diff --staged --quiet || git commit -m "Auto-generate daily content $(date +\%Y-\%m-\%d)"
           git push
 
-      - name: Deploy to Netlify
-        run: |
-          rm -rf .next out
-          npx next build
-          npx netlify deploy --prod --dir=out --no-build --site-id ${{ secrets.NETLIFY_SITE_ID }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./

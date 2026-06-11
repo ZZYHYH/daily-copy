@@ -1,13 +1,29 @@
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const envContent = readFileSync(".env", "utf-8");
-const env = {};
-envContent.split("\n").forEach(line => {
-  const [key, ...val] = line.split("=");
-  if (key && val.length) env[key.trim()] = val.join("=").trim();
-});
+// 支持环境变量（GitHub Actions）和 .env 文件（本地开发）
+function loadEnv() {
+  // 优先使用环境变量
+  if (process.env.DEEPSEEK_API_KEY && process.env.PIXABAY_API_KEY) {
+    return {
+      DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
+      PIXABAY_API_KEY: process.env.PIXABAY_API_KEY,
+    };
+  }
+  // 回退到 .env 文件
+  if (existsSync(".env")) {
+    const envContent = readFileSync(".env", "utf-8");
+    const env = {};
+    envContent.split("\n").forEach(line => {
+      const [key, ...val] = line.split("=");
+      if (key && val.length) env[key.trim()] = val.join("=").trim();
+    });
+    return env;
+  }
+  return {};
+}
 
+const env = loadEnv();
 const DEEPSEEK_KEY = env.DEEPSEEK_API_KEY;
 const PIXABAY_KEY = env.PIXABAY_API_KEY;
 
