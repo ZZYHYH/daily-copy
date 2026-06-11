@@ -2,14 +2,16 @@
 
 import { useState, useMemo } from "react";
 
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+}
+
 interface SearchBarProps {
-  posts: Array<{
-    id: string;
-    title: string;
-    content: string;
-    category: string;
-  }>;
-  onSearchResults: (results: typeof posts) => void;
+  posts: Post[];
+  onSearchResults: (results: Post[]) => void;
 }
 
 export default function SearchBar({ posts, onSearchResults }: SearchBarProps) {
